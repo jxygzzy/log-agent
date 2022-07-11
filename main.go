@@ -2,43 +2,27 @@ package main
 
 import (
 	"strings"
-	"time"
 
+	"logagent/etcd"
 	"logagent/kafka"
 	"logagent/tailfile"
 
-	"github.com/Shopify/sarama"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/ini.v1"
 )
 
 type Config struct {
-	KafkaConfig   `ini:"kafka"`
-	CollectConfig `ini:"collect"`
+	KafkaConfig `ini:"kafka"`
+	EtcdConfig  `ini:"etcd"`
 }
 type KafkaConfig struct {
 	Address  string `ini:"address"`
-	Topic    string `ini:"topic"`
 	ChanSize int    `ini:"chan_size"`
 }
 
-type CollectConfig struct {
-	LogFilePath string `ini:"logfile_path"`
-}
-
-func run() error {
-	for {
-		line, ok := <-tailfile.TailTask.Lines
-		if !ok {
-			logrus.Warn("tail file close reopen, filename:%s\n", tailfile.TailTask.Filename)
-			time.Sleep(time.Second)
-			continue
-		}
-		msg := &sarama.ProducerMessage{}
-		msg.Topic = "web_log"
-		msg.Value = sarama.StringEncoder(line.Text)
-		kafka.MsgChan <- msg
-	}
+type EtcdConfig struct {
+	Address    string `ini:"address"`
+	CollectKey string `ini:"collect_key"`
 }
 
 // 日志收集客户端
@@ -49,26 +33,35 @@ func main() {
 	var config = new(Config)
 	err := ini.MapTo(config, "./conf/config.ini")
 	if err != nil {
-		logrus.Error("load config failed,err:%v", err)
+		logrus.Error("load config failed, err:%v", err)
 	}
 
 	err = kafka.Init(strings.Split(config.KafkaConfig.Address, ","), config.KafkaConfig.ChanSize)
 	if err != nil {
-		logrus.Error("init kafka failed,err:%v", err)
+		logrus.Error("init kafka failed, err:%v", err)
 		return
 	}
 	logrus.Info("init Kafka success!")
 
-	err = tailfile.Init(config.CollectConfig.LogFilePath)
+	err = etcd.Init(strings.Split(config.EtcdConfig.Address, ","))
 	if err != nil {
-		logrus.Error("init tail failed,err:%v", err)
+		logrus.Error("init etcd failed, err:%v", err)
+		return
+	}
+	logrus.Info("init etcd success!")
+
+	allConf, err := etcd.GetConfig(config.EtcdConfig.CollectKey)
+	if err != nil {
+		logrus.Errorf("get conf from etcd failed, err:%v", err)
+	}
+	logrus.Info("get conf from etcd success!")
+	go etcd.WatchConf(config.EtcdConfig.CollectKey)
+	err = tailfile.Init(allConf)
+	if err != nil {
+		logrus.Error("init tail failed, err:%v", err)
 		return
 	}
 	logrus.Info("init tail success!")
-
-	err = run()
-	if err != nil {
-		logrus.Error("run failed,err:%v", err)
-		return
+	for {
 	}
 }
