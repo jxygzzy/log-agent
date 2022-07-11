@@ -11,7 +11,7 @@ type CollectEnty struct {
 }
 
 func GetLocalIp() (ip string, err error) {
-	conn, err := net.Dial("udp", "127.0.0.1:80")
+	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		return
 	}

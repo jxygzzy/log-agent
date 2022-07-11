@@ -38,6 +38,7 @@ func main() {
 		logrus.Error("get local ip failed, err:%v", err)
 		return
 	}
+	logrus.Infof("get local ip success, ip:%s", ip)
 	var config = new(Config)
 	err = ini.MapTo(config, "./conf/config.ini")
 	if err != nil {
