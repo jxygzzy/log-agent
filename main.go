@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"strings"
+	"sync"
 
+	"logagent/common"
 	"logagent/etcd"
 	"logagent/kafka"
 	"logagent/tailfile"
@@ -30,12 +33,17 @@ type EtcdConfig struct {
 // 使用tailf读取日志文件
 
 func main() {
+	ip, err := common.GetLocalIp()
+	if err != nil {
+		logrus.Error("get local ip failed, err:%v", err)
+		return
+	}
 	var config = new(Config)
-	err := ini.MapTo(config, "./conf/config.ini")
+	err = ini.MapTo(config, "./conf/config.ini")
 	if err != nil {
 		logrus.Error("load config failed, err:%v", err)
+		return
 	}
-
 	err = kafka.Init(strings.Split(config.KafkaConfig.Address, ","), config.KafkaConfig.ChanSize)
 	if err != nil {
 		logrus.Error("init kafka failed, err:%v", err)
@@ -50,18 +58,24 @@ func main() {
 	}
 	logrus.Info("init etcd success!")
 
-	allConf, err := etcd.GetConfig(config.EtcdConfig.CollectKey)
+	collectKey := fmt.Sprintf(config.EtcdConfig.CollectKey, ip)
+	allConf, err := etcd.GetConfig(collectKey)
 	if err != nil {
 		logrus.Errorf("get conf from etcd failed, err:%v", err)
 	}
 	logrus.Info("get conf from etcd success!")
-	go etcd.WatchConf(config.EtcdConfig.CollectKey)
+	go etcd.WatchConf(collectKey)
 	err = tailfile.Init(allConf)
 	if err != nil {
 		logrus.Error("init tail failed, err:%v", err)
 		return
 	}
 	logrus.Info("init tail success!")
-	for {
-	}
+	run()
+}
+
+func run() {
+	var wg = sync.WaitGroup{}
+	wg.Add(1)
+	wg.Wait()
 }
