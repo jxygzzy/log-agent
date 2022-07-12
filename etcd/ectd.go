@@ -54,10 +54,11 @@ func WatchConf(key string) {
 		watchChan := client.Watch(context.Background(), key)
 		for resp := range watchChan {
 			for _, evt := range resp.Events {
-				if evt.Type == storagepb.DELETE {
-					tailfile.SetNewConf([]common.CollectEnty{})
-				}
 				var newConf []common.CollectEnty
+				if evt.Type == storagepb.DELETE {
+					tailfile.SetNewConf(newConf)
+					continue
+				}
 				err := json.Unmarshal(evt.Kv.Value, &newConf)
 				if err != nil {
 					logrus.Errorf("json unmarshal new conf failed, err:%v", err)

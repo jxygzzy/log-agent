@@ -52,9 +52,12 @@ func (tm *tailTaskManager) watch() {
 				continue
 			}
 			// 新增任务
+			ctx, cancel := context.WithCancel(context.Background())
 			tt := tailTask{
-				path:  conf.Path,
-				topic: conf.Topic,
+				path:   conf.Path,
+				topic:  conf.Topic,
+				ctx:    ctx,
+				cancel: cancel,
 			}
 			err := tt.Init()
 			if err != nil {

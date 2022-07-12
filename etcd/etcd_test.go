@@ -11,5 +11,6 @@ func TestEtcdPut(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	client.Put(context.Background(), "collect_log_conf", `[{"path":"c:/logs/xx.log","topic":"web_log"},{"path":"c:/logs/xx1.log","topic":"shopping_log"}]`)
+	// client.Put(context.Background(), "collect_log_192.168.1.36_conf", `[{"path":"c:/logs/xx.log","topic":"web_log"},{"path":"c:/logs/xx1.log","topic":"shopping_log"}]`)
+	client.Delete(context.Background(), "collect_log_192.168.1.36_conf")
 }
