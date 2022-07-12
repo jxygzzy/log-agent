@@ -5,6 +5,8 @@
 
 追踪最新日志后，将日志发送至kafka，使用[sarama](https://github.com/Shopify/sarama)操作kafka
 
+消费端地址：[日志收集消费端](https://github.com/jxygzzy/log-transfer)
+
 ## 项目亮点
 集成了`etcd`对需要监听的日志文件做了动态配置，系统使用`watch`监听`etcd`的动态变化，并更新tail任务，可同时监听多个日志文件
 
