@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"strings"
-	"sync"
 
 	"logagent/common"
 	"logagent/etcd"
@@ -76,7 +75,5 @@ func main() {
 }
 
 func run() {
-	var wg = sync.WaitGroup{}
-	wg.Add(1)
-	wg.Wait()
+	select {}
 }
